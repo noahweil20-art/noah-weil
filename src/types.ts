@@ -1,0 +1,194 @@
+export interface UserProfile {
+  uid: string;
+  email: string | null;
+  displayName: string | null;
+  jobTitle?: string;
+  phoneNumber?: string;
+  role: 'admin' | 'user';
+  status: 'active' | 'suspended';
+  planId: 'base' | 'intermediate' | 'pro';
+  erpExpressEnabled?: boolean;
+  customPermissions?: Partial<Plan['permissions']>;
+  createdAt: any;
+}
+
+export interface Plan {
+  id: string;
+  name: string;
+  price: number;
+  permissions: {
+    maxWorkspaces: number;
+    maxMembers: number;
+    competitorHistoryMonths: number;
+    aiAssistantEnabled: boolean;
+    whiteboardEnabled: boolean;
+    googleCalendarEnabled: boolean;
+    canDeleteMessages: boolean;
+    chatUploadEnabled: boolean;
+    chatLinksEnabled: boolean;
+    canExportData: boolean;
+    advancedScheduling: boolean;
+    spreadsheetEnabled: boolean;
+    spreadsheetMaxSheets: number;
+    spreadsheetMaxRows: number;
+    spreadsheetMaxColumns: number;
+    spreadsheetExportEnabled: boolean;
+    spreadsheetImageUploadEnabled: boolean;
+    spreadsheetAdvancedStyles: boolean;
+    spreadsheetRealtimeCollaboration: boolean;
+    maxPostIts: number;
+    externalRestockIntegration: 'none' | 'basic' | 'pro';
+    erpExpressEnabled?: boolean;
+  };
+}
+
+export interface Workspace {
+  id: string;
+  name: string;
+  ownerId: string;
+  joinCode: string;
+  members: Record<string, { role: 'view' | 'edit' | 'admin', email: string, name: string }>;
+  chatbotConfig?: {
+    url?: string;
+    enabled: boolean;
+  };
+  inventoryExternalUrl?: string;
+  createdAt: any;
+}
+
+export interface Spreadsheet {
+  id: string;
+  name: string;
+  data: any[][];
+  workspaceId: string;
+  ownerId?: string;
+  userId?: string;
+  updatedAt: any;
+  updatedBy: string;
+}
+
+export interface PostIt {
+  id: string;
+  content: string;
+  color: string;
+  createdAt: any;
+  userId: string;
+  ownerId?: string;
+  workspaceId: string;
+  x?: number;
+  y?: number;
+}
+
+export interface WhiteboardPoint {
+  x: number;
+  y: number;
+}
+
+export interface WhiteboardLine {
+  id: string;
+  workspaceId: string;
+  userId: string;
+  ownerId?: string;
+  toolType: 'freehand' | 'straight' | 'arrow';
+  color: string;
+  strokeWidth: number;
+  points: WhiteboardPoint[];
+  createdAt: any;
+}
+
+export interface Promotion {
+  id: string;
+  title: string;
+  description: string;
+  discount: string;
+  startDate: string;
+  endDate: string;
+  active: boolean;
+  userId: string;
+  ownerId?: string;
+  workspaceId: string;
+}
+
+export interface Order {
+  id: string;
+  customerName: string;
+  total: number;
+  status: 'pending' | 'shipped' | 'delivered' | 'cancelled';
+  deadline: string;
+  userId: string;
+  ownerId?: string;
+  workspaceId: string;
+}
+
+export interface Appointment {
+  id: string;
+  clientName: string;
+  clientEmail: string;
+  startTime: string;
+  endTime: string;
+  observations: string;
+  status: 'scheduled' | 'completed' | 'cancelled';
+  googleEventId?: string;
+  userId?: string;
+  ownerId?: string;
+  workspaceId: string;
+}
+
+export interface Product {
+  id: string;
+  code: string;
+  name: string;
+  type: string;
+  costPrice: number;
+  salePrice: number;
+  profitPercentage: number;
+  stock: number;
+  unit: 'un' | 'kg' | 'g' | 'l' | 'ml';
+  costBasis: 'unit' | 'weight';
+  stockControl?: 'measure' | 'box';
+  unitsPerBox?: number;
+  minStock?: number;
+  price?: number;
+  userId?: string;
+  ownerId?: string;
+  workspaceId: string;
+  createdAt?: any;
+}
+
+export interface Competitor {
+  id: string;
+  date: string;
+  name: string;
+  location: string;
+  averagePrice: number;
+  promotions: string;
+  strengths: string;
+  weaknesses: string;
+  movement: 'low' | 'medium' | 'high';
+  observations: string;
+  userId: string;
+  ownerId?: string;
+  workspaceId: string;
+  createdAt: any;
+}
+
+export interface ERPData {
+  orders: Order[];
+  products: Product[];
+  stats: {
+    dailySales: number;
+    monthlySales: number;
+    pendingOrders: number;
+    activePromotions: number;
+  };
+}
+
+export interface Message {
+  id: string;
+  workspaceId: string;
+  text: string;
+  userId: string;
+  userEmail: string;
+  userName: string;
+  createdAt: any;
+}

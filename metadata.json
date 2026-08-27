@@ -1,0 +1,6 @@
+{
+  "name": "Express Tools Hub",
+  "description": "A comprehensive tool hub for shopkeepers featuring digital post-its, order scheduling, promotion management, restocking suggestions, and real-time indicators.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

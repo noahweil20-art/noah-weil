@@ -1,0 +1,127 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // =========================
+    // HELPERS
+    // =========================
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function userId() {
+      return request.auth.uid;
+    }
+
+    function isSuper() {
+      return isSignedIn() && (
+        request.auth.token.email == 'noahweil20@gmail.com' ||
+        request.auth.token.email.matches('(?i)^noahweil20@gmail\\.com$')
+      );
+    }
+
+    // ADMIN SIMPLES
+    function isSystemAdmin() {
+      return isSignedIn() && (
+        isSuper() || 
+        (exists(/databases/$(database)/documents/users/$(userId())) &&
+         get(/databases/$(database)/documents/users/$(userId())).data.get('role', 'user') == 'admin')
+      );
+    }
+
+    function isValidId(id) {
+      return id is string &&
+        id.size() <= 128 &&
+        id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    // =========================
+    // WORKSPACE HELPERS
+    // =========================
+
+    function isMemberOf(wsId) {
+      return isSuper() || (
+        isValidId(wsId) &&
+        exists(/databases/$(database)/documents/workspaces/$(wsId)) &&
+        (
+          get(/databases/$(database)/documents/workspaces/$(wsId)).data.ownerId == userId() ||
+          userId() in get(/databases/$(database)/documents/workspaces/$(wsId)).data.members
+        )
+      );
+    }
+
+    function canEditIn(wsId) {
+      return isSuper() || (
+        isValidId(wsId) &&
+        exists(/databases/$(database)/documents/workspaces/$(wsId)) &&
+        (
+          get(/databases/$(database)/documents/workspaces/$(wsId)).data.ownerId == userId() ||
+          get(/databases/$(database)/documents/workspaces/$(wsId)).data.members[userId()].role in ['admin', 'edit']
+        )
+      );
+    }
+
+    // =========================
+    // USERS
+    // =========================
+
+    match /users/{uid} {
+      allow get: if isSignedIn();
+      allow list: if isSignedIn();
+      allow create: if isSignedIn() && (uid == userId() || isSystemAdmin());
+      allow update: if isSignedIn() && (isSystemAdmin() || uid == userId());
+      allow delete: if isSignedIn() && (isSystemAdmin() || isSuper());
+    }
+
+    // =========================
+    // PLANS
+    // =========================
+
+    match /plans/{planId} {
+      allow read: if isSignedIn();
+      allow write: if isSystemAdmin() || isSuper();
+    }
+
+    // =========================
+    // WORKSPACES
+    // =========================
+
+    match /workspaces/{wsId} {
+      allow get: if isSignedIn();
+      allow list: if isSignedIn();
+      allow create: if isSignedIn();
+      allow update: if isSignedIn();
+      allow delete: if isSignedIn();
+    }
+
+    // =========================
+    // MAIN COLLECTIONS (Full CRUD + Delete Permissions)
+    // =========================
+
+    match /{collection}/{id} {
+      allow read, write, create, update, delete: if
+        collection in [
+          'spreadsheets',
+          'postits',
+          'promotions',
+          'orders',
+          'appointments',
+          'products',
+          'competitors',
+          'messages',
+          'whiteboard_lines'
+        ] &&
+        isSignedIn();
+    }
+
+    // =========================
+    // TEST
+    // =========================
+
+    match /test/connection {
+      allow read, write: if true;
+    }
+  }
+}

@@ -1,0 +1,244 @@
+{
+  "entities": {
+    "Workspace": {
+      "title": "Workspace",
+      "description": "A shared workspace for shopkeepers.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "ownerId": { "type": "string" },
+        "members": { 
+          "type": "object",
+          "description": "Map of email to role (view/edit)"
+        },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "ownerId", "members"]
+    },
+    "PostIt": {
+      "title": "PostIt",
+      "description": "A digital note or task.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "content": { "type": "string" },
+        "color": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "userId": { "type": "string" },
+        "workspaceId": { "type": "string" }
+      },
+      "required": ["content", "userId", "workspaceId"]
+    },
+    "Promotion": {
+      "title": "Promotion",
+      "description": "A scheduled promotion or offer.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "discount": { "type": "string" },
+        "startDate": { "type": "string", "format": "date" },
+        "endDate": { "type": "string", "format": "date" },
+        "active": { "type": "boolean" },
+        "userId": { "type": "string" },
+        "workspaceId": { "type": "string" }
+      },
+      "required": ["title", "startDate", "endDate", "userId", "workspaceId"]
+    },
+    "Order": {
+      "title": "Order",
+      "description": "An order from the ERP.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "customerName": { "type": "string" },
+        "total": { "type": "number" },
+        "status": { "type": "string", "enum": ["pending", "shipped", "delivered", "cancelled"] },
+        "deadline": { "type": "string", "format": "date" },
+        "userId": { "type": "string" },
+        "workspaceId": { "type": "string" }
+      },
+      "required": ["customerName", "total", "status", "deadline", "userId", "workspaceId"]
+    },
+    "Appointment": {
+      "title": "Appointment",
+      "description": "A client visit or appointment.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "clientName": { "type": "string" },
+        "clientEmail": { "type": "string" },
+        "startTime": { "type": "string", "format": "date-time" },
+        "endTime": { "type": "string", "format": "date-time" },
+        "observations": { "type": "string" },
+        "status": { "type": "string", "enum": ["scheduled", "completed", "cancelled"] },
+        "googleEventId": { "type": "string" },
+        "workspaceId": { "type": "string" }
+      },
+      "required": ["clientName", "clientEmail", "startTime", "endTime", "workspaceId"]
+    },
+    "Product": {
+      "title": "Product",
+      "description": "A product in the ERP system and inventory.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "code": { "type": "string", "description": "Product code" },
+        "name": { "type": "string", "description": "Product name" },
+        "costPrice": { "type": "number", "description": "Cost price" },
+        "salePrice": { "type": "number", "description": "Sale price" },
+        "profitPercentage": { "type": "number", "description": "Profit percentage" },
+        "stock": { "type": "integer", "description": "Stock quantity" },
+        "type": { "type": "string", "description": "Product type/category" },
+        "unit": { "type": "string", "enum": ["un", "kg", "g", "l", "ml"], "description": "Unit of measure" },
+        "costBasis": { "type": "string", "enum": ["unit", "weight"], "description": "Whether cost is per unit or per weight" },
+        "stockControl": { "type": "string", "enum": ["measure", "box"], "description": "Whether stock is tracked by selected measure or by box" },
+        "unitsPerBox": { "type": "number", "description": "Quantity per box when stock is tracked by box" },
+        "minStock": { "type": "number", "description": "Minimum stock threshold" },
+        "price": { "type": "number", "description": "Legacy price field" },
+        "userId": { "type": "string", "description": "Owner of the product" },
+        "workspaceId": { "type": "string", "description": "Workspace ID" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["code", "name", "costPrice", "salePrice", "stock", "userId", "unit", "costBasis"]
+    },
+    "Competitor": {
+      "title": "Competitor",
+      "description": "Weekly competitor tracking record.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "date": { "type": "string", "format": "date" },
+        "name": { "type": "string" },
+        "location": { "type": "string" },
+        "averagePrice": { "type": "number" },
+        "promotions": { "type": "string" },
+        "strengths": { "type": "string" },
+        "weaknesses": { "type": "string" },
+        "movement": { "type": "string", "enum": ["low", "medium", "high"] },
+        "observations": { "type": "string" },
+        "userId": { "type": "string" },
+        "workspaceId": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["date", "name", "averagePrice", "movement", "userId", "workspaceId"]
+    },
+    "UserProfile": {
+      "title": "User Profile",
+      "description": "User account details and settings.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "email": { "type": "string" },
+        "displayName": { "type": "string" },
+        "role": { "type": "string", "enum": ["admin", "user"] },
+        "status": { "type": "string", "enum": ["active", "suspended"] },
+        "planId": { "type": "string", "enum": ["base", "intermediate", "pro"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "email", "role", "status", "planId"]
+    },
+    "Spreadsheet": {
+      "title": "Spreadsheet",
+      "description": "A digital spreadsheet for workspace data.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "data": { "type": "string", "description": "JSON string of any[][]" },
+        "workspaceId": { "type": "string" },
+        "ownerId": { "type": "string" },
+        "userId": { "type": "string" },
+        "updatedBy": { "type": "string" },
+        "updatedAt": { "type": "string", "format": "date-time" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "data", "workspaceId"]
+    },
+    "WhiteboardLine": {
+      "title": "WhiteboardLine",
+      "description": "Lines, arrows, and connectors drawn on the collaborative whiteboard.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "workspaceId": { "type": "string" },
+        "userId": { "type": "string" },
+        "ownerId": { "type": "string" },
+        "toolType": { "type": "string", "enum": ["freehand", "straight", "arrow"] },
+        "color": { "type": "string" },
+        "strokeWidth": { "type": "number" },
+        "points": { "type": "string", "description": "JSON serialized points array" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["workspaceId", "toolType", "color", "points"]
+    },
+    "Plan": {
+      "title": "Subscription Plan",
+      "description": "Defined subscription tiers and permissions.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "price": { "type": "number" },
+        "permissions": {
+          "type": "object",
+          "properties": {
+            "maxWorkspaces": { "type": "number" },
+            "aiAssistantEnabled": { "type": "boolean" },
+            "canExportData": { "type": "boolean" },
+            "prioritySupport": { "type": "boolean" }
+          }
+        }
+      },
+      "required": ["id", "name", "price", "permissions"]
+    }
+  },
+  "firestore": {
+    "/users/{uid}": {
+      "schema": "UserProfile",
+      "description": "User account profiles."
+    },
+    "/plans/{planId}": {
+      "schema": "Plan",
+      "description": "Subscription tiers."
+    },
+    "/workspaces/{workspaceId}": {
+      "schema": "Workspace",
+      "description": "Workspaces for collaboration."
+    },
+    "/postits/{postitId}": {
+      "schema": "PostIt",
+      "description": "Collection of digital post-its."
+    },
+    "/promotions/{promotionId}": {
+      "schema": "Promotion",
+      "description": "Collection of scheduled promotions."
+    },
+    "/orders/{orderId}": {
+      "schema": "Order",
+      "description": "Collection of orders."
+    },
+    "/appointments/{appointmentId}": {
+      "schema": "Appointment",
+      "description": "Collection of client appointments."
+    },
+    "/products/{productId}": {
+      "schema": "Product",
+      "description": "Collection of inventory products."
+    },
+    "/competitors/{competitorId}": {
+      "schema": "Competitor",
+      "description": "Collection of competitor tracking records."
+    },
+    "/spreadsheets/{spreadsheetId}": {
+      "schema": "Spreadsheet",
+      "description": "Collection of workspace spreadsheets."
+    },
+    "/whiteboard_lines/{lineId}": {
+      "schema": "WhiteboardLine",
+      "description": "Collection of whiteboard lines, drawings and connectors."
+    }
+  }
+}
