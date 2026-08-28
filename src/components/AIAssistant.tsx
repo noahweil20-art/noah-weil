@@ -48,11 +48,17 @@ export default function AIAssistant() {
 
   React.useEffect(() => {
     fetch('/api/assistant/guide')
-      .then(res => res.json())
+      .then(res => {
+        const ct = res.headers.get('content-type');
+        if (res.ok && ct && ct.includes('application/json')) {
+          return res.json();
+        }
+        return null;
+      })
       .then(data => {
         if (data) setGuideData(data);
       })
-      .catch(err => console.error('Error fetching assistant guide from backend:', err));
+      .catch(err => console.error('Error fetching assistant guide:', err));
   }, []);
 
   React.useEffect(() => {

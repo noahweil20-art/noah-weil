@@ -79,8 +79,15 @@ export default function Appointments() {
     }
     try {
       const response = await fetch('/api/auth/google/url');
-      const { url } = await response.json();
-      window.open(url, 'google_auth', 'width=600,height=700');
+      const ct = response.headers.get('content-type');
+      if (response.ok && ct && ct.includes('application/json')) {
+        const { url } = await response.json();
+        if (url) {
+          window.open(url, 'google_auth', 'width=600,height=700');
+          return;
+        }
+      }
+      alert('Integração com Google Calendar disponível no ambiente completo com backend ativo.');
     } catch (error) {
       console.error("Error getting auth URL:", error);
     }
@@ -115,22 +122,27 @@ export default function Appointments() {
     try {
       let googleEventId = '';
       if (googleTokens) {
-        const response = await fetch('/api/calendar/events', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            tokens: googleTokens,
-            event: {
-              summary: `Visita: ${formData.clientName}`,
-              description: formData.observations,
-              start: { dateTime: new Date(formData.startTime).toISOString() },
-              end: { dateTime: new Date(formData.endTime).toISOString() },
-              attendees: [{ email: formData.clientEmail }]
-            }
-          })
-        });
-        const data = await response.json();
-        googleEventId = data.id;
+        try {
+          const response = await fetch('/api/calendar/events', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              tokens: googleTokens,
+              event: {
+                summary: `Visita: ${formData.clientName}`,
+                description: formData.observations,
+                start: { dateTime: new Date(formData.startTime).toISOString() },
+                end: { dateTime: new Date(formData.endTime).toISOString() },
+                attendees: [{ email: formData.clientEmail }]
+              }
+            })
+          });
+          const ct = response.headers.get('content-type');
+          if (response.ok && ct && ct.includes('application/json')) {
+            const data = await response.json();
+            googleEventId = data.id || '';
+          }
+        } catch (_) {}
       }
 
       await addDoc(collection(db, 'appointments'), {

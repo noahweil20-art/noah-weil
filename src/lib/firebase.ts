@@ -1,4 +1,4 @@
-import { initializeApp } from 'firebase/app';
+import { initializeApp, getApps, deleteApp } from 'firebase/app';
 import { 
   getAuth, 
   signOut,
@@ -6,15 +6,62 @@ import {
   createUserWithEmailAndPassword,
   updateProfile
 } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore';
+import { getFirestore, doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import firebaseConfig from '../../firebase-applet-config.json';
 
+export { firebaseConfig };
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
 
 export { signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile };
 export const logout = () => signOut(auth);
+
+/**
+ * Creates a new user directly in Firebase Auth and Firestore using a secondary Firebase App.
+ * This guarantees the currently logged-in Admin is NEVER logged out, and works seamlessly
+ * on serverless / static hosting platforms like Vercel where the custom backend server is not running.
+ */
+export async function createSecondaryUser(params: {
+  email: string;
+  password: string;
+  displayName: string;
+  role: 'user' | 'admin';
+  planId: 'base' | 'intermediate' | 'pro';
+  erpExpressEnabled: boolean;
+}) {
+  const secondaryAppName = `SecondaryAuth_${Date.now()}`;
+  const secondaryApp = initializeApp(firebaseConfig, secondaryAppName);
+  const secondaryAuth = getAuth(secondaryApp);
+
+  try {
+    const cred = await createUserWithEmailAndPassword(secondaryAuth, params.email, params.password);
+    const createdUser = cred.user;
+
+    if (params.displayName) {
+      await updateProfile(createdUser, { displayName: params.displayName });
+    }
+
+    // Save profile to Firestore
+    await setDoc(doc(db, 'users', createdUser.uid), {
+      uid: createdUser.uid,
+      email: params.email.toLowerCase(),
+      displayName: params.displayName || 'Novo Usuário',
+      role: params.role || 'user',
+      planId: params.planId || 'base',
+      erpExpressEnabled: params.erpExpressEnabled,
+      status: 'active',
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    });
+
+    return createdUser;
+  } finally {
+    try {
+      await signOut(secondaryAuth);
+    } catch (_) {}
+  }
+}
 
 export enum OperationType {
   CREATE = 'create',
