@@ -13,6 +13,7 @@ import {
   Store,
   CalendarDays,
   Users,
+  Share2,
   ChevronDown,
   ShieldCheck,
   CreditCard,
@@ -26,7 +27,8 @@ import {
   Headphones,
   PhoneCall,
   ExternalLink,
-  Lock
+  Lock,
+  PenTool
 } from 'lucide-react';
 import { Button } from './ui/button';
 import { auth } from '@/lib/firebase';
@@ -65,15 +67,17 @@ export default function Layout({ children, activeTab, setActiveTab, onLogout }: 
 
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { id: 'whiteboard', label: 'Quadro Branco', icon: PenTool, permission: true },
     { id: 'postits', label: 'Post-its', icon: StickyNote, permission: true },
     { id: 'spreadsheets', label: 'Planilhas em Branco', icon: TableIcon, permission: plan?.permissions.spreadsheetEnabled },
     { id: 'orders', label: 'Agenda de Pedidos', icon: CalendarClock },
-    { id: 'appointments', label: 'Visitas e Clientes', icon: CalendarDays },
+    { id: 'appointments', label: 'Visitas & Agendamentos', icon: CalendarDays },
+    { id: 'clients', label: 'Carteira de Clientes', icon: Users },
     { id: 'promotions', label: 'Promoções', icon: Tag },
     { id: 'competitors', label: 'Concorrentes', icon: TrendingUp },
     { id: 'restock', label: plan?.permissions?.erpExpressEnabled ? 'ERP Express' : 'ERP Express Lite', icon: PackageSearch, permission: true },
     { id: 'ai_assistant', label: 'Assistente AI', icon: Bot, permission: plan?.permissions.aiAssistantEnabled },
-    { id: 'sharing', label: 'Compartilhamento', icon: Users },
+    { id: 'sharing', label: 'Compartilhamento', icon: Share2 },
     { id: 'chat', label: 'Chat da Equipe', icon: MessageSquare },
   ];
 

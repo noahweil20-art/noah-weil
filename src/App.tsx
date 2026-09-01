@@ -33,6 +33,7 @@ const RestockSuggestions = React.lazy(() => import('./components/RestockSuggesti
 const SupportChat = React.lazy(() => import('./components/SupportChat'));
 const AIAssistant = React.lazy(() => import('./components/AIAssistant'));
 const Appointments = React.lazy(() => import('./components/Appointments'));
+const ClientsManager = React.lazy(() => import('./components/ClientsManager'));
 const CompetitorTracker = React.lazy(() => import('./components/CompetitorTracker'));
 const WorkspaceSharing = React.lazy(() => import('./components/WorkspaceSharing'));
 const SpreadsheetArea = React.lazy(() => import('./components/SpreadsheetArea'));
@@ -49,7 +50,15 @@ function TabLoadingFallback() {
 function AppContent() {
   const { user, profile, loading, isAdmin } = useUser();
   const [activeTab, setActiveTab] = React.useState('dashboard');
+  const [preselectedClient, setPreselectedClient] = React.useState<any>(null);
   const [authError, setAuthError] = React.useState<string | null>(null);
+
+  const handleNavigateWithData = (tab: string, data?: any) => {
+    if (tab === 'appointments' && data) {
+      setPreselectedClient(data);
+    }
+    setActiveTab(tab);
+  };
   const [isAuthLoading, setIsAuthLoading] = React.useState(false);
   const [email, setEmail] = React.useState('');
   const [password, setPassword] = React.useState('');
@@ -224,13 +233,15 @@ function AppContent() {
   const renderContent = () => {
     switch (activeTab) {
       case 'dashboard': return <Dashboard />;
-      case 'postits': return <PostIts />;
+      case 'whiteboard': return <PostIts defaultView="whiteboard" onNavigateToTab={setActiveTab} />;
+      case 'postits': return <PostIts defaultView="grid" onNavigateToTab={setActiveTab} />;
       case 'spreadsheets': return <SpreadsheetArea />;
       case 'orders': return <OrderSchedule />;
       case 'promotions': return <PromotionManager />;
       case 'restock': return <RestockSuggestions />;
       case 'ai_assistant': return <AIAssistant />;
-      case 'appointments': return <Appointments />;
+      case 'appointments': return <Appointments onNavigateToTab={handleNavigateWithData} preselectedClient={preselectedClient} />;
+      case 'clients': return <ClientsManager onNavigateToTab={handleNavigateWithData} />;
       case 'competitors': return <CompetitorTracker />;
       case 'sharing': return <WorkspaceSharing />;
       case 'chat': return <SupportChat />;

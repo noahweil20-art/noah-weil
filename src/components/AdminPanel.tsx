@@ -28,6 +28,7 @@ import {
   ArrowRight,
   Trash2,
   X,
+  RefreshCw,
   Table as TableIcon
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -51,7 +52,7 @@ import { UserProfile, Plan } from '@/types';
 import { executeDelete } from '@/lib/deleteHelper';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
-import { useUser } from '@/contexts/UserContext';
+import { useUser, FALLBACK_PLANS } from '@/contexts/UserContext';
 import { sendPasswordResetEmail } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 
@@ -63,6 +64,34 @@ export default function AdminPanel() {
   const [plans, setPlans] = React.useState<Plan[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [searchTerm, setSearchTerm] = React.useState('');
+  const [saveSuccessNotice, setSaveSuccessNotice] = React.useState<string | null>(null);
+
+  const showFeedback = (msg: string) => {
+    setSaveSuccessNotice(msg);
+    setTimeout(() => {
+      setSaveSuccessNotice((prev) => (prev === msg ? null : prev));
+    }, 3000);
+  };
+
+  // Seed default plans into Firestore if not present
+  const seedDefaultPlansIfEmpty = React.useCallback(async (currentPlans: Plan[]) => {
+    if (!hasAdminAccess) return;
+    const requiredPlanIds = ['base', 'intermediate', 'pro'];
+    const missingPlanIds = requiredPlanIds.filter(id => !currentPlans.some(p => p.id === id));
+    
+    if (missingPlanIds.length > 0) {
+      for (const id of missingPlanIds) {
+        const defaultPlan = FALLBACK_PLANS[id];
+        if (defaultPlan) {
+          try {
+            await setDoc(doc(db, 'plans', id), defaultPlan, { merge: true });
+          } catch (e) {
+            console.warn(`Could not seed plan ${id}:`, e);
+          }
+        }
+      }
+    }
+  }, [hasAdminAccess]);
 
   React.useEffect(() => {
     if (!hasAdminAccess) {
@@ -79,35 +108,52 @@ export default function AdminPanel() {
       setLoading(false);
     }, (error) => handleFirestoreError(error, OperationType.LIST, 'users'));
 
-    // Load Plans from backend catalog API / Firestore
-    fetch('/api/plans')
-      .then(res => {
-        const ct = res.headers.get('content-type');
-        if (res.ok && ct && ct.includes('application/json')) {
-          return res.json();
-        }
-        return null;
-      })
-      .then(data => {
-        if (Array.isArray(data) && data.length > 0) {
-          setPlans(data);
-        }
-      })
-      .catch(() => {});
+    // Initialize with fallback plans first
+    const initialPlans = Object.values(FALLBACK_PLANS);
+    setPlans(initialPlans);
 
     const plansQuery = query(collection(db, 'plans'));
     const unsubscribePlans = onSnapshot(plansQuery, (snapshot) => {
       if (!snapshot.empty) {
         const plansData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Plan));
-        setPlans(plansData);
+        // Merge with fallback to ensure all required fields exist
+        const mergedPlans = requiredPlanList(plansData);
+        setPlans(mergedPlans);
+      } else {
+        seedDefaultPlansIfEmpty([]);
       }
-    }, (error) => handleFirestoreError(error, OperationType.LIST, 'plans'));
+    }, (error) => {
+      console.warn('Plans collection snapshot fallback:', error);
+      handleFirestoreError(error, OperationType.LIST, 'plans');
+    });
 
     return () => {
       unsubscribeUsers();
       unsubscribePlans();
     };
-  }, [hasAdminAccess]);
+  }, [hasAdminAccess, seedDefaultPlansIfEmpty]);
+
+  // Helper to ensure base, intermediate, and pro always exist in the array
+  function requiredPlanList(firestoreData: Plan[]): Plan[] {
+    const list: Plan[] = [];
+    for (const key of ['base', 'intermediate', 'pro']) {
+      const existing = firestoreData.find(p => p.id === key);
+      const fallback = FALLBACK_PLANS[key];
+      if (existing) {
+        list.push({
+          ...fallback,
+          ...existing,
+          permissions: {
+            ...fallback.permissions,
+            ...(existing.permissions || {})
+          }
+        });
+      } else if (fallback) {
+        list.push(fallback);
+      }
+    }
+    return list;
+  }
 
   if (!hasAdminAccess) {
     return (
@@ -121,113 +167,32 @@ export default function AdminPanel() {
     );
   }
 
-  const initDefaultPlans = async () => {
-    if (!isSuperUser) return; // Only super user can init plans
-    const defaultPlans: Plan[] = [
-      {
-        id: 'base',
-        name: 'Plano Base',
-        price: 0,
-        permissions: {
-          maxWorkspaces: 2,
-          maxMembers: 6,
-          spreadsheetEnabled: true,
-          spreadsheetMaxSheets: 3,
-          spreadsheetMaxRows: 100,
-          spreadsheetMaxColumns: 15,
-          spreadsheetExportEnabled: false,
-          spreadsheetImageUploadEnabled: false,
-          spreadsheetAdvancedStyles: false,
-          spreadsheetRealtimeCollaboration: false,
-          maxPostIts: 10,
-          competitorHistoryMonths: 3,
-          aiAssistantEnabled: false,
-          whiteboardEnabled: false,
-          googleCalendarEnabled: false,
-          canDeleteMessages: false,
-          chatUploadEnabled: false,
-          chatLinksEnabled: false,
-          canExportData: false,
-          advancedScheduling: false,
-          externalRestockIntegration: 'none'
-        }
-      },
-      {
-        id: 'intermediate',
-        name: 'Plano Intermediário',
-        price: 49.90,
-        permissions: {
-          maxWorkspaces: 4,
-          maxMembers: 12,
-          spreadsheetEnabled: true,
-          spreadsheetMaxSheets: 10,
-          spreadsheetMaxRows: 1000,
-          spreadsheetMaxColumns: 40,
-          spreadsheetExportEnabled: true,
-          spreadsheetImageUploadEnabled: false,
-          spreadsheetAdvancedStyles: true,
-          spreadsheetRealtimeCollaboration: true,
-          maxPostIts: 50,
-          competitorHistoryMonths: 9,
-          aiAssistantEnabled: true,
-          whiteboardEnabled: false,
-          googleCalendarEnabled: true,
-          canDeleteMessages: false,
-          chatUploadEnabled: true,
-          chatLinksEnabled: true,
-          canExportData: true,
-          advancedScheduling: true,
-          externalRestockIntegration: 'basic'
-        }
-      },
-      {
-        id: 'pro',
-        name: 'Plano Pro',
-        price: 99.90,
-        permissions: {
-          maxWorkspaces: 5,
-          maxMembers: 30,
-          spreadsheetEnabled: true,
-          spreadsheetMaxSheets: 9999,
-          spreadsheetMaxRows: 999999,
-          spreadsheetMaxColumns: 999999,
-          spreadsheetExportEnabled: true,
-          spreadsheetImageUploadEnabled: true,
-          spreadsheetAdvancedStyles: true,
-          spreadsheetRealtimeCollaboration: true,
-          maxPostIts: 9999,
-          competitorHistoryMonths: 24,
-          aiAssistantEnabled: true,
-          whiteboardEnabled: true,
-          googleCalendarEnabled: true,
-          canDeleteMessages: true,
-          chatUploadEnabled: true,
-          chatLinksEnabled: true,
-          canExportData: true,
-          advancedScheduling: true,
-          externalRestockIntegration: 'pro'
-        }
+  const resetPlansToDefaults = async () => {
+    if (!confirm('Deseja restaurar as permissões e valores padrão originais para todos os planos?')) return;
+    try {
+      for (const plan of Object.values(FALLBACK_PLANS)) {
+        await setDoc(doc(db, 'plans', plan.id), plan);
       }
-    ];
-
-    for (const plan of defaultPlans) {
-      await setDoc(doc(db, 'plans', plan.id), plan);
+      showFeedback('Planos restaurados com os padrões originais com sucesso!');
+    } catch (err: any) {
+      alert('Erro ao restaurar planos: ' + err.message);
     }
   };
 
-  const toggleUserStatus = async (user: UserProfile) => {
+  const toggleUserStatus = async (targetUser: UserProfile) => {
     if (!hasAdminAccess) {
       alert("Apenas administradores podem alterar o status de usuários.");
       return;
     }
-    const newStatus = user.status === 'active' ? 'suspended' : 'active';
+    const newStatus = targetUser.status === 'suspended' ? 'active' : 'suspended';
     try {
-      await updateDoc(doc(db, 'users', user.uid), {
+      await setDoc(doc(db, 'users', targetUser.uid), {
         status: newStatus,
         updatedAt: serverTimestamp()
-      });
+      }, { merge: true });
+      showFeedback(`Status do usuário ${targetUser.displayName || targetUser.email} alterado para ${newStatus === 'active' ? 'Ativo' : 'Suspenso'}!`);
     } catch (error) {
-      handleFirestoreError(error, OperationType.UPDATE, `users/${user.uid}`);
+      handleFirestoreError(error, OperationType.UPDATE, `users/${targetUser.uid}`);
     }
   };
 
@@ -242,10 +207,11 @@ export default function AdminPanel() {
     const newStatus = !currentStatus;
     
     try {
-      await updateDoc(doc(db, 'users', targetUser.uid), {
+      await setDoc(doc(db, 'users', targetUser.uid), {
         erpExpressEnabled: newStatus,
         updatedAt: serverTimestamp()
-      });
+      }, { merge: true });
+      showFeedback(`ERP Express ${newStatus ? 'Habilitado' : 'Desabilitado'} para ${targetUser.displayName || targetUser.email}!`);
     } catch (error) {
       handleFirestoreError(error, OperationType.UPDATE, `users/${targetUser.uid}`);
     }
@@ -257,9 +223,12 @@ export default function AdminPanel() {
       return;
     }
     try {
-      await updateDoc(doc(db, 'plans', planId), {
+      const currentPlan = plans.find(p => p.id === planId) || FALLBACK_PLANS[planId];
+      await setDoc(doc(db, 'plans', planId), {
+        ...currentPlan,
         [field]: value
-      });
+      }, { merge: true });
+      showFeedback(`Plano ${planId.toUpperCase()}: ${field === 'name' ? 'Nome' : 'Preço'} atualizado com sucesso!`);
     } catch (error) {
       handleFirestoreError(error, OperationType.UPDATE, `plans/${planId}`);
     }
@@ -270,13 +239,17 @@ export default function AdminPanel() {
       alert("Apenas administradores podem alterar as permissões do plano.");
       return;
     }
-    const plan = plans.find(p => p.id === planId);
-    if (!plan) return;
-
     try {
-      await updateDoc(doc(db, 'plans', planId), {
-        [`permissions.${permissionKey}`]: value
-      });
+      const currentPlan = plans.find(p => p.id === planId) || FALLBACK_PLANS[planId];
+      const updatedPermissions = {
+        ...(currentPlan.permissions || {}),
+        [permissionKey]: value
+      };
+      await setDoc(doc(db, 'plans', planId), {
+        ...currentPlan,
+        permissions: updatedPermissions
+      }, { merge: true });
+      showFeedback(`Plano ${planId.toUpperCase()}: Permissão "${permissionKey}" atualizada em tempo real!`);
     } catch (error) {
       handleFirestoreError(error, OperationType.UPDATE, `plans/${planId}`);
     }
@@ -385,6 +358,20 @@ export default function AdminPanel() {
           Planos
         </Button>
       </div>
+
+      <AnimatePresence>
+        {saveSuccessNotice && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            className="flex items-center gap-3 p-3.5 bg-emerald-50 border border-emerald-200 text-emerald-900 rounded-xl text-sm font-semibold shadow-sm"
+          >
+            <CheckCircle className="w-4 h-4 text-emerald-600 shrink-0" />
+            <span>{saveSuccessNotice}</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <AnimatePresence mode="wait">
         {activeSubTab === 'users' && (
@@ -509,8 +496,30 @@ export default function AdminPanel() {
             initial={{ opacity: 0, scale: 0.98 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.98 }}
-            className="grid grid-cols-1 lg:grid-cols-3 gap-8"
+            className="space-y-6"
           >
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-2xl bg-neutral-900 text-white shadow-lg">
+              <div className="space-y-1">
+                <h3 className="text-base font-bold flex items-center gap-2">
+                  <ShieldCheck className="w-5 h-5 text-emerald-400" />
+                  Sincronização em Tempo Real de Planos e Permissões
+                </h3>
+                <p className="text-xs text-neutral-300">
+                  Todas as alterações em limites, ferramentas ou valores entram em vigor imediatamente para todos os usuários conectados.
+                </p>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={resetPlansToDefaults}
+                className="bg-white/10 hover:bg-white/20 text-white border-white/20 text-xs font-bold rounded-xl h-10 gap-2 shrink-0"
+              >
+                <RefreshCw className="w-3.5 h-3.5" />
+                Restaurar Padrões dos Planos
+              </Button>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {plans.sort((a, b) => a.price - b.price).map((plan) => (
               <Card key={plan.id} className={cn(
                 "border-2 transition-all duration-300 relative",
@@ -802,6 +811,7 @@ export default function AdminPanel() {
                 </CardContent>
               </Card>
             ))}
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
@@ -1132,7 +1142,7 @@ function EditUserDialog({ user }: { user: UserProfile }) {
   const handleUpdate = async () => {
     setLoading(true);
     try {
-      await updateDoc(doc(db, 'users', user.uid), {
+      await setDoc(doc(db, 'users', user.uid), {
         displayName: name || 'Sem Nome',
         jobTitle: jobTitle || '',
         phoneNumber: phone || '',
@@ -1141,11 +1151,11 @@ function EditUserDialog({ user }: { user: UserProfile }) {
         erpExpressEnabled,
         status,
         updatedAt: serverTimestamp()
-      });
+      }, { merge: true });
       setOpen(false);
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
-      alert('Erro ao atualizar usuário.');
+      alert('Erro ao atualizar usuário: ' + (e.message || 'Erro desconhecido'));
     } finally {
       setLoading(false);
     }

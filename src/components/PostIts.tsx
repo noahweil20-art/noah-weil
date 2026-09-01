@@ -33,7 +33,12 @@ const EXTENDED_COLORS = [
   'bg-teal-100 border-teal-200',
 ];
 
-export default function PostIts() {
+interface PostItsProps {
+  defaultView?: 'grid' | 'whiteboard';
+  onNavigateToTab?: (tab: string) => void;
+}
+
+export default function PostIts({ defaultView = 'grid', onNavigateToTab }: PostItsProps) {
   const { currentWorkspace, canEdit, isAdmin } = useWorkspace();
   const { plan } = useUser();
   const { checkLimit } = usePlanLimit();
@@ -42,11 +47,18 @@ export default function PostIts() {
   const [selectedColor, setSelectedColor] = React.useState(COLORS[0]);
   const [editingId, setEditingId] = React.useState<string | null>(null);
   const [editContent, setEditContent] = React.useState('');
-  const [view, setView] = React.useState<'grid' | 'whiteboard'>('grid');
+  const [view, setView] = React.useState<'grid' | 'whiteboard'>(defaultView);
   const [isDeleting, setIsDeleting] = React.useState<string | null>(null);
 
+  // Sync view if defaultView prop changes from navigation
+  React.useEffect(() => {
+    if (defaultView) {
+      setView(defaultView);
+    }
+  }, [defaultView]);
+
   const colorsToUse = plan?.id === 'base' ? COLORS : EXTENDED_COLORS;
-  const whiteboardEnabled = plan?.permissions.whiteboardEnabled;
+  const whiteboardEnabled = plan?.permissions?.whiteboardEnabled !== false;
 
   React.useEffect(() => {
     if (!currentWorkspace) return;
@@ -125,42 +137,47 @@ export default function PostIts() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex flex-col gap-1">
-          <h2 className="text-3xl font-bold tracking-tight">Post-its Digitais & Quadro</h2>
-          <p className="text-muted-foreground">Suas notas, esquemas e desenhos compartilhados em tempo real.</p>
+          <h2 className="text-3xl font-bold tracking-tight">
+            {view === 'whiteboard' ? 'Quadro Branco Interativo' : 'Post-its Digitais'}
+          </h2>
+          <p className="text-muted-foreground">
+            {view === 'whiteboard' 
+              ? 'Desenhe esquemas, trace conexões e posicione notas livres no quadro interativo em tempo real.'
+              : 'Organize lembretes, avisos de clientes e tarefas rápidas em cartões coloridos.'}
+          </p>
         </div>
         
-        {whiteboardEnabled && (
-          <div className="flex gap-2 p-1 bg-neutral-100 rounded-xl">
-            <Button 
-              variant={view === 'grid' ? 'default' : 'ghost'} 
-              size="sm" 
-              className="rounded-lg h-9"
-              onClick={() => setView('grid')}
-            >
-              <Palette className="w-4 h-4 mr-2" />
-              Grade
-            </Button>
-            <Button 
-              variant={view === 'whiteboard' ? 'default' : 'ghost'} 
-              size="sm" 
-              className="rounded-lg h-9"
-              onClick={() => {
-                if (!checkLimit('ao Quadro Branco interativo (disponível no Plano Pro)', !!whiteboardEnabled)) {
-                  return;
-                }
-                setView('whiteboard');
-              }}
-            >
-              <WhiteboardIcon className="w-4 h-4 mr-2" />
-              Quadro Branco (PRO)
-            </Button>
-          </div>
-        )}
+        <div className="flex items-center gap-2 p-1 bg-neutral-100 rounded-xl self-start sm:self-auto border border-neutral-200/60 shadow-inner">
+          <Button 
+            variant={view === 'grid' ? 'default' : 'ghost'} 
+            size="sm" 
+            className="rounded-lg h-9 font-semibold text-xs transition-all"
+            onClick={() => {
+              setView('grid');
+              onNavigateToTab?.('postits');
+            }}
+          >
+            <Palette className="w-4 h-4 mr-1.5" />
+            Grade de Post-its
+          </Button>
+          <Button 
+            variant={view === 'whiteboard' ? 'default' : 'ghost'} 
+            size="sm" 
+            className="rounded-lg h-9 font-semibold text-xs transition-all"
+            onClick={() => {
+              setView('whiteboard');
+              onNavigateToTab?.('whiteboard');
+            }}
+          >
+            <WhiteboardIcon className="w-4 h-4 mr-1.5 text-primary" />
+            Quadro Branco (Canvas)
+          </Button>
+        </div>
       </div>
 
-      {view === 'whiteboard' && whiteboardEnabled ? (
+      {view === 'whiteboard' ? (
         <div className="space-y-4">
           {canEdit && (
             <div className="bg-white p-4 rounded-2xl flex flex-wrap gap-3 items-center shadow-sm border border-neutral-200">

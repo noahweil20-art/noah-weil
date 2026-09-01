@@ -15,37 +15,165 @@ interface UserContextType {
 
 const UserContext = React.createContext<UserContextType | undefined>(undefined);
 
+export const FALLBACK_PLANS: Record<string, Plan> = {
+  base: {
+    id: 'base',
+    name: 'Plano Base',
+    price: 0,
+    permissions: {
+      maxWorkspaces: 2,
+      maxMembers: 6,
+      spreadsheetEnabled: true,
+      spreadsheetMaxSheets: 3,
+      spreadsheetMaxRows: 100,
+      spreadsheetMaxColumns: 15,
+      spreadsheetExportEnabled: false,
+      spreadsheetImageUploadEnabled: false,
+      spreadsheetAdvancedStyles: false,
+      spreadsheetRealtimeCollaboration: false,
+      maxPostIts: 10,
+      competitorHistoryMonths: 3,
+      aiAssistantEnabled: false,
+      whiteboardEnabled: true,
+      googleCalendarEnabled: false,
+      canDeleteMessages: false,
+      chatUploadEnabled: false,
+      chatLinksEnabled: false,
+      canExportData: false,
+      advancedScheduling: false,
+      externalRestockIntegration: 'none',
+      erpExpressEnabled: false
+    }
+  },
+  intermediate: {
+    id: 'intermediate',
+    name: 'Plano Intermediário',
+    price: 49.90,
+    permissions: {
+      maxWorkspaces: 4,
+      maxMembers: 12,
+      spreadsheetEnabled: true,
+      spreadsheetMaxSheets: 10,
+      spreadsheetMaxRows: 1000,
+      spreadsheetMaxColumns: 40,
+      spreadsheetExportEnabled: true,
+      spreadsheetImageUploadEnabled: false,
+      spreadsheetAdvancedStyles: true,
+      spreadsheetRealtimeCollaboration: true,
+      maxPostIts: 50,
+      competitorHistoryMonths: 9,
+      aiAssistantEnabled: true,
+      whiteboardEnabled: true,
+      googleCalendarEnabled: true,
+      canDeleteMessages: false,
+      chatUploadEnabled: true,
+      chatLinksEnabled: true,
+      canExportData: true,
+      advancedScheduling: true,
+      externalRestockIntegration: 'basic',
+      erpExpressEnabled: true
+    }
+  },
+  pro: {
+    id: 'pro',
+    name: 'Plano Pro Master',
+    price: 99.90,
+    permissions: {
+      maxWorkspaces: 10,
+      maxMembers: 30,
+      spreadsheetEnabled: true,
+      spreadsheetMaxSheets: 50,
+      spreadsheetMaxRows: 10000,
+      spreadsheetMaxColumns: 100,
+      spreadsheetExportEnabled: true,
+      spreadsheetImageUploadEnabled: true,
+      spreadsheetAdvancedStyles: true,
+      spreadsheetRealtimeCollaboration: true,
+      maxPostIts: 200,
+      competitorHistoryMonths: 24,
+      aiAssistantEnabled: true,
+      whiteboardEnabled: true,
+      googleCalendarEnabled: true,
+      canDeleteMessages: true,
+      chatUploadEnabled: true,
+      chatLinksEnabled: true,
+      canExportData: true,
+      advancedScheduling: true,
+      externalRestockIntegration: 'pro',
+      erpExpressEnabled: true
+    }
+  }
+};
+
 export function UserProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = React.useState<User | null>(null);
   const [profile, setProfile] = React.useState<UserProfile | null>(null);
+  const [firestorePlans, setFirestorePlans] = React.useState<Record<string, Plan>>({});
   const [plan, setPlan] = React.useState<Plan | null>(null);
   const [loading, setLoading] = React.useState(true);
+
+  // Helper to compute effective plan based on profile + firestore plans + custom overrides
+  const computeEffectivePlan = React.useCallback((currentProfile: UserProfile | null, allPlans: Record<string, Plan>): Plan => {
+    const planId = currentProfile?.planId || 'base';
+    const basePlan = allPlans[planId] || FALLBACK_PLANS[planId] || FALLBACK_PLANS.base;
+    
+    // Deep clone permissions
+    const effectivePermissions = { ...basePlan.permissions };
+
+    // Apply customPermissions override if defined on the profile
+    if (currentProfile?.customPermissions) {
+      Object.assign(effectivePermissions, currentProfile.customPermissions);
+    }
+
+    // Apply erpExpressEnabled override
+    if (currentProfile?.erpExpressEnabled !== undefined) {
+      effectivePermissions.erpExpressEnabled = currentProfile.erpExpressEnabled;
+      if (currentProfile.erpExpressEnabled) {
+        effectivePermissions.externalRestockIntegration = 'pro';
+      } else if (planId === 'base' && !currentProfile.customPermissions?.externalRestockIntegration) {
+        effectivePermissions.externalRestockIntegration = 'none';
+      }
+    }
+
+    return {
+      ...basePlan,
+      permissions: effectivePermissions
+    };
+  }, []);
+
+  // Listen to Firestore Plans in real time
+  React.useEffect(() => {
+    const plansCol = collection(db, 'plans');
+    const unsubPlans = onSnapshot(plansCol, (snapshot) => {
+      if (!snapshot.empty) {
+        const plansMap: Record<string, Plan> = {};
+        snapshot.docs.forEach(docSnap => {
+          plansMap[docSnap.id] = { id: docSnap.id, ...docSnap.data() } as Plan;
+        });
+        setFirestorePlans(plansMap);
+      }
+    }, (err) => {
+      console.warn('Could not listen to Firestore plans collection, using fallbacks:', err);
+    });
+
+    return () => unsubPlans();
+  }, []);
+
+  // Re-compute active plan whenever profile or firestorePlans change
+  React.useEffect(() => {
+    if (profile) {
+      const resolved = computeEffectivePlan(profile, firestorePlans);
+      setPlan(resolved);
+    } else {
+      setPlan(FALLBACK_PLANS.base);
+    }
+  }, [profile, firestorePlans, computeEffectivePlan]);
 
   React.useEffect(() => {
     const unsubscribeAuth = onAuthStateChanged(auth, async (u) => {
       setUser(u);
       
       if (u) {
-        // Authoritative server-side profile sync
-        try {
-          const syncRes = await fetch('/api/user/sync-profile', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              uid: u.uid,
-              email: u.email,
-              displayName: u.displayName
-            })
-          });
-          if (syncRes.ok) {
-            const syncData = await syncRes.json();
-            if (syncData.profile) setProfile(syncData.profile);
-            if (syncData.plan) setPlan(syncData.plan);
-          }
-        } catch (syncErr) {
-          console.warn('[USER SYNC] Backend profile sync fallback to Firestore listener:', syncErr);
-        }
-
         // Realtime Firestore profile listener for reactive updates
         const userRef = doc(db, 'users', u.uid);
         const unsubProfile = onSnapshot(userRef, async (docSnap) => {
@@ -56,33 +184,6 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
             // Force admin promotion for the owner email
             if (u.email?.toLowerCase() === 'noahweil20@gmail.com' && profileData.role !== 'admin') {
               updateDoc(userRef, { role: 'admin' }).catch(console.error);
-            }
-
-            // Fetch authoritative plan from backend API
-            try {
-              const planRes = await fetch(`/api/plans/${profileData.planId || 'base'}`);
-              if (planRes.ok) {
-                const planData = await planRes.json();
-                if (planData && planData.permissions) {
-                  if (profileData.customPermissions) {
-                    planData.permissions = {
-                      ...planData.permissions,
-                      ...profileData.customPermissions
-                    };
-                  }
-                  if (profileData.erpExpressEnabled !== undefined) {
-                    planData.permissions.erpExpressEnabled = profileData.erpExpressEnabled;
-                    if (profileData.erpExpressEnabled) {
-                      planData.permissions.externalRestockIntegration = 'pro';
-                    } else if (profileData.planId === 'base') {
-                      planData.permissions.externalRestockIntegration = 'none';
-                    }
-                  }
-                }
-                setPlan(planData);
-              }
-            } catch (err) {
-              console.error("Error fetching plan from backend:", err);
             }
           } else {
             // Check if there's a manually created profile with this email or create new

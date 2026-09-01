@@ -124,14 +124,36 @@ export interface Appointment {
   id: string;
   clientName: string;
   clientEmail: string;
+  clientPhone?: string;
+  location?: string;
   startTime: string;
   endTime: string;
   observations: string;
   status: 'scheduled' | 'completed' | 'cancelled';
+  outcome?: 'pending' | 'sold' | 'followup' | 'declined';
+  convertedOrderId?: string;
   googleEventId?: string;
   userId?: string;
   ownerId?: string;
   workspaceId: string;
+  createdAt?: any;
+}
+
+export interface Client {
+  id: string;
+  name: string;
+  email?: string;
+  phone?: string;
+  company?: string;
+  category?: 'prospect' | 'active' | 'vip' | 'inactive';
+  notes?: string;
+  address?: string;
+  totalVisits?: number;
+  lastVisitDate?: string;
+  workspaceId: string;
+  userId?: string;
+  ownerId?: string;
+  createdAt?: any;
 }
 
 export interface Product {
