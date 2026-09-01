@@ -37,7 +37,8 @@ import {
   Clock, 
   CalendarPlus,
   TrendingUp,
-  UserCheck
+  UserCheck,
+  Truck
 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -687,14 +688,26 @@ export default function ClientsManager({ onNavigateToTab }: ClientsManagerProps)
 
                 <div className="p-4 bg-neutral-50/80 border-t border-neutral-100 flex items-center justify-between gap-2">
                   {onNavigateToTab && (
-                    <Button
-                      size="sm"
-                      onClick={() => onNavigateToTab('appointments', client)}
-                      className="bg-neutral-900 hover:bg-neutral-800 text-white rounded-xl text-xs font-bold h-8 flex-1 gap-1"
-                    >
-                      <CalendarPlus className="w-3.5 h-3.5 text-emerald-400" />
-                      Agendar Visita
-                    </Button>
+                    <>
+                      <Button
+                        size="sm"
+                        onClick={() => onNavigateToTab('appointments', client)}
+                        className="bg-neutral-900 hover:bg-neutral-800 text-white rounded-xl text-xs font-bold h-8 flex-1 gap-1"
+                      >
+                        <CalendarPlus className="w-3.5 h-3.5 text-emerald-400" />
+                        Visita
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => onNavigateToTab('shipping', client)}
+                        className="border-neutral-300 hover:bg-amber-50 hover:border-amber-400 text-neutral-800 rounded-xl text-xs font-bold h-8 gap-1"
+                        title="Cotar frete para este cliente"
+                      >
+                        <Truck className="w-3.5 h-3.5 text-amber-600" />
+                        Frete
+                      </Button>
+                    </>
                   )}
 
                   {canEdit && (

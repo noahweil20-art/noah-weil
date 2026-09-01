@@ -214,3 +214,49 @@ export interface Message {
   userName: string;
   createdAt: any;
 }
+
+export interface ShippingOption {
+  id: string;
+  name: string; // 'Motoboy Express', 'SEDEX', 'PAC', 'Transportadora Rodoviária', 'Frota Própria', 'Retirada no Balcão'
+  carrier: string; // 'Loggi / Motoboy', 'Correios', 'Jadlog / Braspress', 'Empresa', 'Loja'
+  deliveryDays: string; // 'Hoje em até 2h', '1 a 2 dias úteis', '4 a 7 dias úteis'
+  price: number;
+  originalCost?: number;
+  notes?: string;
+  selected?: boolean;
+}
+
+export interface ShippingQuote {
+  id: string;
+  code?: string;
+  clientName: string;
+  clientPhone?: string;
+  clientEmail?: string;
+  clientId?: string;
+  originCep: string;
+  originCity?: string;
+  originState?: string;
+  originAddress?: string;
+  destinationCep: string;
+  destinationCity?: string;
+  destinationState?: string;
+  destinationNeighborhood?: string;
+  destinationAddress?: string;
+  weightKg: number;
+  heightCm: number;
+  widthCm: number;
+  lengthCm: number;
+  declaredValue?: number;
+  packagingFee?: number;
+  notes?: string;
+  options: ShippingOption[];
+  selectedOption?: string; // option id or name
+  totalSelectedPrice?: number;
+  status: 'pending' | 'approved' | 'rejected' | 'delivered';
+  convertedOrderId?: string;
+  userId?: string;
+  ownerId?: string;
+  workspaceId: string;
+  createdAt?: any;
+  updatedAt?: any;
+}

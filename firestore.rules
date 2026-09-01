@@ -112,7 +112,8 @@ service cloud.firestore {
           'competitors',
           'messages',
           'whiteboard_lines',
-          'clients'
+          'clients',
+          'shipping_quotes'
         ] &&
         isSignedIn();
     }

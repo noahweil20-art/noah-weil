@@ -34,6 +34,7 @@ const SupportChat = React.lazy(() => import('./components/SupportChat'));
 const AIAssistant = React.lazy(() => import('./components/AIAssistant'));
 const Appointments = React.lazy(() => import('./components/Appointments'));
 const ClientsManager = React.lazy(() => import('./components/ClientsManager'));
+const ShippingQuotes = React.lazy(() => import('./components/ShippingQuotes'));
 const CompetitorTracker = React.lazy(() => import('./components/CompetitorTracker'));
 const WorkspaceSharing = React.lazy(() => import('./components/WorkspaceSharing'));
 const SpreadsheetArea = React.lazy(() => import('./components/SpreadsheetArea'));
@@ -242,6 +243,7 @@ function AppContent() {
       case 'ai_assistant': return <AIAssistant />;
       case 'appointments': return <Appointments onNavigateToTab={handleNavigateWithData} preselectedClient={preselectedClient} />;
       case 'clients': return <ClientsManager onNavigateToTab={handleNavigateWithData} />;
+      case 'shipping': return <ShippingQuotes onNavigateToTab={handleNavigateWithData} preselectedClient={preselectedClient} />;
       case 'competitors': return <CompetitorTracker />;
       case 'sharing': return <WorkspaceSharing />;
       case 'chat': return <SupportChat />;
