@@ -84,7 +84,7 @@ export default function Layout({ children, activeTab, setActiveTab, onLogout }: 
   ];
 
   const allNavItems = [...menuItems];
-  allNavItems.push({ id: 'subscription', label: 'Minha Assinatura', icon: CreditCard, permission: true });
+  allNavItems.push({ id: 'subscription', label: 'Planos & Plataforma', icon: CreditCard, permission: true });
 
   if (isSuperUser) {
     allNavItems.push({ id: 'admin', label: 'Painel Admin', icon: ShieldCheck, permission: true });
@@ -146,7 +146,7 @@ export default function Layout({ children, activeTab, setActiveTab, onLogout }: 
             href={getWhatsAppSupportUrl("Olá! Preciso de ajuda com o suporte do Express Tools.")}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-1.5 px-2.5 py-1.5 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 rounded-lg text-xs font-bold transition-colors"
+            className="flex items-center gap-1.5 px-2.5 py-1.5 bg-neutral-100 text-neutral-900 hover:bg-neutral-200 rounded-lg text-xs font-bold transition-colors"
             title="Contatar Suporte no WhatsApp (41) 99667-9075"
           >
             <Headphones className="w-3.5 h-3.5" />
@@ -274,7 +274,7 @@ export default function Layout({ children, activeTab, setActiveTab, onLogout }: 
                   activeTab === item.id 
                     ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20 translate-x-1" 
                     : isLocked
-                    ? "text-neutral-400 hover:bg-amber-50/60 hover:text-amber-900"
+                    ? "text-neutral-400 hover:bg-neutral-100 hover:text-neutral-700"
                     : "text-neutral-500 hover:bg-neutral-100 hover:text-neutral-900"
                 )}
               >
@@ -283,7 +283,7 @@ export default function Layout({ children, activeTab, setActiveTab, onLogout }: 
                   <span>{item.label}</span>
                 </div>
                 {isLocked && (
-                  <span className="p-1 rounded-md bg-amber-100 text-amber-800 text-[10px] font-bold">
+                  <span className="p-1 rounded-md bg-neutral-200 text-neutral-800 text-[10px] font-bold">
                     <Lock className="w-3 h-3" />
                   </span>
                 )}
@@ -294,24 +294,24 @@ export default function Layout({ children, activeTab, setActiveTab, onLogout }: 
 
         <div className="p-4 border-t bg-neutral-50/50 space-y-3">
           {/* Suporte WhatsApp */}
-          <div className="p-3 bg-emerald-50/80 border border-emerald-200/80 rounded-xl space-y-2">
+          <div className="p-3 bg-neutral-100 border border-neutral-200 rounded-xl space-y-2">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 text-emerald-800 font-bold text-xs">
-                <div className="w-5 h-5 rounded-full bg-emerald-500 text-white flex items-center justify-center">
+              <div className="flex items-center gap-2 text-neutral-900 font-bold text-xs">
+                <div className="w-5 h-5 rounded-full bg-neutral-900 text-white flex items-center justify-center">
                   <Headphones className="w-3 h-3" />
                 </div>
                 <span>Contatar Suporte</span>
               </div>
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
+              <span className="w-2 h-2 rounded-full bg-neutral-900 animate-ping" />
             </div>
-            <p className="text-[11px] text-emerald-700 leading-tight">
-              Atendimento oficial via WhatsApp: <strong className="font-bold">{SUPPORT_PHONE_FORMATTED}</strong>
+            <p className="text-[11px] text-neutral-600 leading-tight">
+              Atendimento oficial via WhatsApp: <strong className="font-bold text-neutral-900">{SUPPORT_PHONE_FORMATTED}</strong>
             </p>
             <a
               href={getWhatsAppSupportUrl(`Olá! Sou ${auth.currentUser?.displayName || 'lojista'} (${auth.currentUser?.email || ''}) e preciso de suporte com o Express Tools.`)}
               target="_blank"
               rel="noopener noreferrer"
-              className="w-full flex items-center justify-center gap-1.5 py-2 px-3 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg shadow-sm transition-all hover:shadow"
+              className="w-full flex items-center justify-center gap-1.5 py-2 px-3 bg-neutral-900 hover:bg-neutral-800 text-white text-xs font-bold rounded-lg shadow-sm transition-all hover:shadow"
             >
               <PhoneCall className="w-3.5 h-3.5" />
               <span>Mandar Mensagem</span>
@@ -357,7 +357,7 @@ export default function Layout({ children, activeTab, setActiveTab, onLogout }: 
             href={getWhatsAppSupportUrl(`Olá! Sou ${auth.currentUser?.displayName || 'usuário'} e preciso de suporte com a plataforma.`)}
             target="_blank"
             rel="noopener noreferrer"
-            className="group flex items-center bg-emerald-600 hover:bg-emerald-700 text-white rounded-full shadow-xl shadow-emerald-950/20 hover:shadow-2xl transition-all duration-300 p-3 hover:pr-4.5 hover:pl-3.5 hover:scale-105"
+            className="group flex items-center bg-neutral-900 hover:bg-neutral-800 text-white rounded-full shadow-xl shadow-neutral-950/20 hover:shadow-2xl transition-all duration-300 p-3 hover:pr-4.5 hover:pl-3.5 hover:scale-105"
             title={`Suporte WhatsApp: ${SUPPORT_PHONE_FORMATTED}`}
             id="floating-support-btn"
           >
@@ -368,10 +368,10 @@ export default function Layout({ children, activeTab, setActiveTab, onLogout }: 
             {/* Expanded Content on Hover */}
             <div className="max-w-0 opacity-0 overflow-hidden group-hover:max-w-xs group-hover:opacity-100 transition-all duration-300 ease-in-out whitespace-nowrap pl-0 group-hover:pl-2.5 flex items-center gap-2">
               <div className="flex flex-col text-left">
-                <span className="text-[10px] font-bold text-emerald-100 uppercase tracking-wider leading-none">Suporte Online</span>
+                <span className="text-[10px] font-bold text-neutral-300 uppercase tracking-wider leading-none">Suporte Online</span>
                 <span className="text-xs font-black leading-tight text-white">{SUPPORT_PHONE_FORMATTED}</span>
               </div>
-              <ExternalLink className="w-3.5 h-3.5 text-emerald-200 shrink-0" />
+              <ExternalLink className="w-3.5 h-3.5 text-neutral-400 shrink-0" />
             </div>
           </a>
         </div>

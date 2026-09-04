@@ -17,6 +17,7 @@ import { WorkspaceProvider } from './contexts/WorkspaceContext';
 import { UserProvider, useUser } from './contexts/UserContext';
 import { PlanLimitProvider } from './contexts/PlanLimitContext';
 import PlanLimitModal from './components/PlanLimitModal';
+import LandingPage from './components/LandingPage';
 import { cn } from './lib/utils';
 import { motion } from 'motion/react';
 import { getWhatsAppSupportUrl, SUPPORT_PHONE_FORMATTED } from './lib/support';
@@ -115,119 +116,16 @@ function AppContent() {
 
   if (!user) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-neutral-50 p-4">
-        <Card className="max-w-md w-full shadow-xl border-none">
-          <CardHeader className="text-center space-y-4 pb-4">
-            <div className="mx-auto w-16 h-16 bg-primary rounded-2xl flex items-center justify-center text-primary-foreground shadow-lg shadow-primary/20">
-              <Store className="w-10 h-10" />
-            </div>
-            <div className="space-y-2">
-              <CardTitle className="text-3xl font-black tracking-tight">Express Tools Hub</CardTitle>
-              <p className="text-muted-foreground text-sm">A central de ferramentas definitiva para o seu negócio.</p>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleAuth} className="space-y-4">
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <div className="relative">
-                    <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      type="email"
-                      placeholder="E-mail profissional"
-                      className="pl-10 h-11 border-neutral-200 focus-visible:ring-neutral-900"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      required
-                    />
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      type="password"
-                      placeholder="Sua senha"
-                      className="pl-10 h-11 border-neutral-200 focus-visible:ring-neutral-900"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      required
-                    />
-                  </div>
-                  <div className="flex justify-end">
-                    <button 
-                      type="button" 
-                      onClick={async () => {
-                        if (!email) {
-                          setAuthError("Digite seu e-mail para recuperar a senha.");
-                          return;
-                        }
-                        try {
-                          await sendPasswordResetEmail(auth, email);
-                          setAuthError("E-mail de recuperação enviado para " + email);
-                        } catch (e: any) {
-                          setAuthError("Erro ao enviar e-mail de recuperação.");
-                        }
-                      }}
-                      className="text-[10px] font-bold text-neutral-400 hover:text-neutral-900 uppercase tracking-widest transition-colors"
-                    >
-                      Esqueceu a senha?
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              {authError && (
-                <motion.div 
-                  initial={{ opacity: 0, y: -10 }} 
-                  animate={{ opacity: 1, y: 0 }}
-                  className={cn(
-                    "p-3 rounded-lg text-xs font-medium flex items-center gap-2",
-                    authError.includes("enviado") ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700"
-                  )}
-                >
-                  {authError.includes("enviado") ? <CheckCircle className="w-3 h-3" /> : <ShieldAlert className="w-3 h-3" />}
-                  {authError}
-                </motion.div>
-              )}
-
-              <Button 
-                type="submit" 
-                className="w-full h-11 font-bold bg-neutral-900 hover:bg-neutral-800 transition-all rounded-xl shadow-lg shadow-neutral-900/10"
-                disabled={isAuthLoading}
-              >
-                {isAuthLoading ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <div className="flex items-center gap-2">
-                    Acessar Painel
-                    <ArrowRight className="w-4 h-4" />
-                  </div>
-                )}
-              </Button>
-            </form>
-            
-            <p className="text-[10px] text-center text-muted-foreground mt-6 px-8">
-              Ao continuar, você concorda com nossos termos de uso e política de privacidade.
-            </p>
-
-            {/* Suporte WhatsApp */}
-            <div className="mt-6 pt-4 border-t border-neutral-100 flex flex-col items-center gap-2">
-              <span className="text-xs text-neutral-500 font-medium">Precisa de ajuda ou deseja assinar?</span>
-              <a
-                href={getWhatsAppSupportUrl("Olá! Gostaria de falar com o suporte do Express Tools para tirar dúvidas ou solicitar acesso.")}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-full flex items-center justify-center gap-2 py-2.5 px-4 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 rounded-xl text-xs font-bold transition-all"
-              >
-                <Headphones className="w-4 h-4 text-emerald-600" />
-                <span>Falar com Suporte no WhatsApp ({SUPPORT_PHONE_FORMATTED})</span>
-                <ExternalLink className="w-3 h-3 ml-1 text-emerald-600 opacity-80" />
-              </a>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      <LandingPage
+        email={email}
+        setEmail={setEmail}
+        password={password}
+        setPassword={setPassword}
+        handleAuth={handleAuth}
+        isAuthLoading={isAuthLoading}
+        authError={authError}
+        setAuthError={setAuthError}
+      />
     );
   }
 
@@ -248,7 +146,7 @@ function AppContent() {
       case 'sharing': return <WorkspaceSharing />;
       case 'chat': return <SupportChat />;
       case 'admin': return <AdminPanel />;
-      case 'subscription': return <SubscriptionSelector currentProfile={profile} />;
+      case 'subscription': return <SubscriptionSelector currentProfile={profile} onNavigateToTab={setActiveTab} />;
       default: return <Dashboard />;
     }
   };
